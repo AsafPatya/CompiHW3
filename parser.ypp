@@ -66,121 +66,89 @@ Funcs: /*ε*/
 Funcs: FuncDecl Funcs
     {};
 
-FuncDecl: FuncSignature LBRACE Statements RBRACE PopScope
-    {};
-FuncSignature: RetType ID LPAREN Formals RPAREN
-    { $$ = Parser::instance().deriveFuncSignature($1, $2, $4, yylineno); };
+FuncDecl   :    FuncSignature LBRACE Statements RBRACE PopScope  { /* not supposed to do anything */ }
+           ;
 
-RetType: Type
-    { $$ = $1; } ;
-RetType: VOID
-    { $$ = $1; };
+FuncSignature : RetType ID LPAREN Formals RPAREN  { $$ = Parser::instance().deriveFuncSignature($1, $2, $4, yylineno); }
+           ;
 
-Formals: /*ε*/
-    { $$ = Parser::instance().deriveFormals(); };
-Formals: FormalsList
-    { $$ = Parser::instance().deriveFormals($1); };
+RetType    :    Type             { $$ = $1; }
+           |    VOID             { $$ = $1; }
+           ;
 
-FormalsList: FormalDecl
-    { $$ = Parser::instance().deriveFormalsList($1); };
-FormalsList:    FormalDecl COMMA FormalsList
-    { $$ = Parser::instance().deriveFormalsList($1, $3); };
+Formals    :    /*epsilon*/      { $$ = Parser::instance().deriveFormals(); }
+           |    FormalsList      { $$ = Parser::instance().deriveFormals($1); }
+           ;
 
-FormalDecl: Type ID
-    { $$ = Parser::instance().deriveFormalDecl($1, $2, yylineno); };
+FormalsList:    FormalDecl       { $$ = Parser::instance().deriveFormalsList($1); }
+           |    FormalDecl COMMA FormalsList  { $$ = Parser::instance().deriveFormalsList($1, $3); }
+           ;
 
-Statements: Statement
-    {};
-Statements: Statements Statement
-    {};
-Statement: PushScope LBRACE Statements RBRACE PopScope
-    {};
-Statement: Type ID SC
-    { Parser::instance().deriveStatement($1, $2, yylineno); };
-Statement: Type ID ASSIGN Exp SC
-    { Parser::instance().deriveDeclaration($1, $2, $4, yylineno); };
-Statement: AUTO ID ASSIGN Exp SC
-    { Parser::instance().deriveDeclaration(nullptr, $2, $4, yylineno); };
-Statement: ID ASSIGN Exp SC
-    { Parser::instance().deriveAssignment($1, $3, yylineno); };
-Statement: Call SC
-    {};
-Statement: RETURN SC
-    { Parser::instance().deriveReturnVoid(yylineno); };
-Statement: RETURN Exp SC
-    { Parser::instance().deriveReturnExp($2, yylineno); };
-Statement: IF LPAREN Exp IsBool RPAREN PushScope Statement PopScope
-    {};
-Statement: IF LPAREN Exp IsBool RPAREN PushScope Statement PopScope ELSE PushScope Statement PopScope
-    {};
-Statement: WHILE LPAREN Exp IsBool RPAREN PushWhileScope Statement PopScope
-    {};
-Statement: BREAK SC
-    { Parser::instance().deriveBreak(yylineno); };
-Statement: CONTINUE SC
-     { Parser::instance().deriveContinue(yylineno); };
+FormalDecl :    Type ID          { $$ = Parser::instance().deriveFormalDecl($1, $2, yylineno); }
+           ;
 
-Call:    ID LPAREN ExpList RPAREN
-    { $$ = Parser::instance().deriveCall(yylineno, $1, $3); };
-Call:    ID LPAREN RPAREN
-    { $$ = Parser::instance().deriveCall(yylineno, $1); };
+Statements :    Statement             { /* not supposed to do anything */ }
+           |    Statements Statement  { /* not supposed to do anything */ }
+           ;
 
-ExpList:    Exp
-    { $$ = Parser::instance().deriveExpList($1); };
-ExpList:    Exp COMMA ExpList
-    { $$ = Parser::instance().deriveExpList($1, $3); };
+Statement  :    PushScope LBRACE Statements RBRACE PopScope  { /* not supposed to do anything */ }
+           |    Type ID SC                { Parser::instance().deriveStatement($1, $2, yylineno); }
+           |    Type ID ASSIGN Exp SC     { Parser::instance().deriveDeclaration($1, $2, $4, yylineno); }
+           |    AUTO ID ASSIGN Exp SC     { Parser::instance().deriveDeclaration(nullptr, $2, $4, yylineno); }
+           |    ID ASSIGN Exp SC          { Parser::instance().deriveAssignment($1, $3, yylineno); }
+           |    Call SC                   { /* not supposed to do anything */ }
+           |    RETURN SC                 { Parser::instance().deriveReturnVoid(yylineno); }
+           |    RETURN Exp SC             { Parser::instance().deriveReturnExp($2, yylineno); }
+           |    IF LPAREN Exp IsBool RPAREN PushScope Statement PopScope  { /* not supposed to do anything */ }
+           |    IF LPAREN Exp IsBool RPAREN PushScope Statement PopScope ELSE PushScope Statement PopScope  { /* not supposed to do anything */ }
+           |    WHILE LPAREN Exp IsBool RPAREN PushWhileScope Statement PopScope  { /* not supposed to do anything */ }
+           |    BREAK SC                   { Parser::instance().deriveBreak(yylineno); }
+           |    CONTINUE SC                { Parser::instance().deriveContinue(yylineno); }
+           ;
 
-Type: INT
-    { $$ = $1; };
-Type: BYTE
-    { $$ = $1; };
-Type: BOOL
-     { $$ = $1; };
+Call       :    ID LPAREN ExpList RPAREN    { $$ = Parser::instance().deriveCall(yylineno, $1, $3); }
+           |    ID LPAREN RPAREN            { $$ = Parser::instance().deriveCall(yylineno, $1); }
+           ;
 
-Exp: LPAREN Exp RPAREN
-    { $$ = $2; };
-Exp: Exp MULTIPLICATIVE Exp
-    { $$ = Parser::instance().deriveBinop($1, $3, yylineno); };
-Exp: Exp ADDITIVE Exp
-    { $$ = Parser::instance().deriveBinop($1, $3, yylineno); };
-Exp: ID
-    { $$ = Parser::instance().deriveId($1, yylineno); };
-Exp: Call
-    { $$ = $1; };
-Exp: NUM
-    { $$ = $1; };
-Exp: NUM B
-    { $$ = Parser::instance().deriveNumB($1, yylineno); };
-Exp: STRING
-    { $$ = $1; };
-Exp: TRUE
-    { $$ = $1; };
-Exp: FALSE
-    { $$ = $1; };
-Exp: NOT Exp
-    { $$ = Parser::instance().deriveNot($2, yylineno); };
-Exp: Exp AND Exp
-    { $$ = Parser::instance().deriveAndOr($1, $3, yylineno); };
-Exp: Exp OR Exp
-    { $$ = Parser::instance().deriveAndOr($1, $3, yylineno); };
-Exp: Exp EQUALITY Exp
-    { $$ = Parser::instance().deriveRelop($1, $3, yylineno); };
-Exp: Exp RELATIONAL Exp
-    { $$ = Parser::instance().deriveRelop($1, $3, yylineno); };
-Exp: LPAREN Type RPAREN Exp
-    { $$ = Parser::instance().deriveCast($2, $4, yylineno); };
+ExpList    :    Exp                         { $$ = Parser::instance().deriveExpList($1); }
+           |    Exp COMMA ExpList           { $$ = Parser::instance().deriveExpList($1, $3); }
+           ;
 
-PushScope: /*ε*/
-    { Parser::instance().pushScope(); };
+Type       :    INT                         { $$ = $1; }
+           |    BYTE                        { $$ = $1; }
+           |    BOOL                        { $$ = $1; }
+           ;
 
-PushWhileScope  :    /*ε*/
-    { Parser::instance().pushScope(true); };
+Exp        :    LPAREN Exp RPAREN            { $$ = $2; }
+           |    Exp MULTIPLICATIVE Exp       { $$ = Parser::instance().deriveBinop($1, $3, yylineno); }
+           |    Exp ADDITIVE Exp             { $$ = Parser::instance().deriveBinop($1, $3, yylineno); }
+           |    ID                           { $$ = Parser::instance().deriveId($1, yylineno); }
+           |    Call                         { $$ = $1; }
+           |    NUM                          { $$ = $1; }
+           |    NUM B                        { $$ = Parser::instance().deriveNumB($1, yylineno); }
+           |    STRING                       { $$ = $1; }
+           |    TRUE                         { $$ = $1; }
+           |    FALSE                        { $$ = $1; }
+           |    NOT Exp                      { $$ = Parser::instance().deriveNot($2, yylineno); }
+           |    Exp AND Exp                  { $$ = Parser::instance().deriveAndOr($1, $3, yylineno); }
+           |    Exp OR Exp                   { $$ = Parser::instance().deriveAndOr($1, $3, yylineno); }
+           |    Exp EQUALITY Exp             { $$ = Parser::instance().deriveRelop($1, $3, yylineno); }
+           |    Exp RELATIONAL Exp           { $$ = Parser::instance().deriveRelop($1, $3, yylineno); }
+           |    LPAREN Type RPAREN Exp       { $$ = Parser::instance().deriveCast($2, $4, yylineno); }
+           ;
 
-PopScope   :    /*ε*/
-    { Parser::instance().popScope(); };
+/* Markers */
+PushScope  :    /*epsilon*/                  { Parser::instance().pushScope(); }
+           ;
 
-IsBool     :    /*ε*/
-    { Parser::instance().deriveBool($0, yylineno); };
+PushWhileScope  :    /*epsilon*/                  { Parser::instance().pushScope(true); }
+           ;
+
+PopScope   :    /*epsilon*/                  { Parser::instance().popScope(); }
+           ;
+
+IsBool     :    /*epsilon*/                  { Parser::instance().deriveBool($0, yylineno); }
+           ;
 
 %%
 
@@ -194,3 +162,4 @@ void yyerror(const char* message) {
 	output::errorSyn(yylineno);
 	exit(0);
 }
+
