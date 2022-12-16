@@ -58,13 +58,12 @@
 
 %%
 
-Program: Funcs
-    {};
+Program    :    Funcs            { /* not supposed to do anything */ }
+           ;
 
-Funcs: /*ε*/
-    {};
-Funcs: FuncDecl Funcs
-    {};
+Funcs      :    /*epsilon*/      { /* not supposed to do anything */ }
+           |    FuncDecl Funcs   { /* not supposed to do anything */ }
+           ;
 
 FuncDecl   :    FuncSignature LBRACE Statements RBRACE PopScope  { /* not supposed to do anything */ }
            ;
